@@ -1,0 +1,54 @@
+# Goes at: .github/workflows/nhi-governance-scan.yml
+#
+# Runs the NHI governance engine on a schedule using OIDC federation.
+# There are NO AWS access keys stored anywhere in this repo. The only value
+# needed is the role ARN, which is not sensitive (stored as a repo variable).
+name: nhi-governance-scan
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"   # Mondays, 07:00 UTC
+  workflow_dispatch: {}     # allow manual runs
+
+# id-token: write is what lets the job request a GitHub OIDC token to exchange
+# for AWS credentials. This is the mechanism that replaces static keys.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Exchanges the GitHub OIDC token for short-lived STS credentials.
+      # No aws-access-key-id / aws-secret-access-key anywhere.
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.NHI_SCAN_ROLE_ARN }}
+          aws-region: us-east-1
+
+      # Proof the runner is now a federated, short-lived identity (an assumed
+      # role session), not an IAM user with a static key.
+      - name: Confirm federated identity
+        run: aws sts get-caller-identity
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install boto3
+
+      - name: Run NHI governance engine
+        run: python nhi_governance_engine.py --region us-east-1 --output nhi-report.json
+
+      - name: Upload findings report
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhi-report
+          path: nhi-report.json

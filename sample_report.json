@@ -1,0 +1,127 @@
+{
+  "generated_at": "2026-06-04T18:33:57.563783+00:00",
+  "account_id": "000000000000",
+  "scope": "iam_roles, iam_users+keys, secretsmanager_secrets (read-only)",
+  "summary": {
+    "nhi_total": 4,
+    "nhi_by_type": {
+      "iam_role": 2,
+      "iam_user": 1,
+      "secret": 1
+    },
+    "findings_total": 7,
+    "findings_by_severity": {
+      "INFO": 0,
+      "LOW": 0,
+      "MEDIUM": 4,
+      "HIGH": 2,
+      "CRITICAL": 1
+    }
+  },
+  "findings": [
+    {
+      "finding_id": "NHI-NO-OWNER:legacy-etl-runner",
+      "nhi_id": "arn:aws:iam::000000000000:role/legacy-etl-runner",
+      "nhi_type": "iam_role",
+      "title": "Non-human identity has no accountable owner",
+      "severity": "MEDIUM",
+      "owasp_nhi": "OWASP NHI1: Improper Offboarding",
+      "nist_800_53": "NIST 800-53 AC-2 (Account Management)",
+      "evidence": {
+        "tags": {}
+      },
+      "remediation": "Assign an Owner tag (team or email). Unowned NHIs are the ones that never get reviewed or offboarded."
+    },
+    {
+      "finding_id": "NHI-ROLE-STALE:legacy-etl-runner",
+      "nhi_id": "arn:aws:iam::000000000000:role/legacy-etl-runner",
+      "nhi_type": "iam_role",
+      "title": "Role unused for 410 days",
+      "severity": "MEDIUM",
+      "owasp_nhi": "OWASP NHI1: Improper Offboarding",
+      "nist_800_53": "NIST 800-53 AC-2 (Account Management); NIST 800-53 AC-6 (Least Privilege)",
+      "evidence": {
+        "last_used_days": 410
+      },
+      "remediation": "Disable, then remove after a retention window. Mirrors your on-prem disablement-before-deletion pattern."
+    },
+    {
+      "finding_id": "NHI-WILDCARD-ADMIN:legacy-etl-runner",
+      "nhi_id": "arn:aws:iam::000000000000:role/legacy-etl-runner",
+      "nhi_type": "iam_role",
+      "title": "Policy grants Action:* on Resource:* (effective admin)",
+      "severity": "HIGH",
+      "owasp_nhi": "OWASP NHI5: Overprivileged NHI",
+      "nist_800_53": "NIST 800-53 AC-6 (Least Privilege)",
+      "evidence": {
+        "statement": {
+          "Effect": "Allow",
+          "Action": "*",
+          "Resource": "*"
+        }
+      },
+      "remediation": "Scope to the specific actions/resources actually used. TODO: confirm with Access Advisor last-accessed data."
+    },
+    {
+      "finding_id": "NHI-TRUST-WILDCARD:legacy-etl-runner",
+      "nhi_id": "arn:aws:iam::000000000000:role/legacy-etl-runner",
+      "nhi_type": "iam_role",
+      "title": "Role trust policy allows any principal to assume it",
+      "severity": "CRITICAL",
+      "owasp_nhi": "OWASP NHI6: Insecure Cloud Deployment Config",
+      "nist_800_53": "NIST 800-53 AC-6 (Least Privilege); NIST 800-53 IA-9 (Service Identification and Authentication)",
+      "evidence": {
+        "trust_statement": {
+          "Effect": "Allow",
+          "Principal": {
+            "AWS": "*"
+          },
+          "Action": "sts:AssumeRole"
+        }
+      },
+      "remediation": "Restrict the trust policy to specific, intended principals. This is the cross-account assumption risk your STS/AssumeRole detection pipeline watches for."
+    },
+    {
+      "finding_id": "NHI-KEY-AGE-.OLD:ci-deploy",
+      "nhi_id": "arn:aws:iam::000000000000:user/ci-deploy",
+      "nhi_type": "iam_user",
+      "title": "Active access key is 420 days old (no rotation)",
+      "severity": "HIGH",
+      "owasp_nhi": "OWASP NHI7: Long-Lived Secrets",
+      "nist_800_53": "NIST 800-53 IA-5 (Authenticator Management)",
+      "evidence": {
+        "key_id": "AKIA...OLD",
+        "age_days": 420,
+        "last_used_days": 12
+      },
+      "remediation": "Rotate the key, or migrate the workload off static keys to an STS-assumed role / OIDC federation."
+    },
+    {
+      "finding_id": "NHI-STATIC-CRED:ci-deploy",
+      "nhi_id": "arn:aws:iam::000000000000:user/ci-deploy",
+      "nhi_type": "iam_user",
+      "title": "Workload authenticates with long-lived static credentials",
+      "severity": "MEDIUM",
+      "owasp_nhi": "OWASP NHI4: Insecure Authentication",
+      "nist_800_53": "NIST 800-53 IA-5 (Authenticator Management)",
+      "evidence": {
+        "credential_model": "static_long_lived"
+      },
+      "remediation": "Target state is short-lived federated credentials (IRSA / GitHub OIDC) or an assumed role, not static keys."
+    },
+    {
+      "finding_id": "NHI-SECRET-NO-ROTATION:prod/db-master",
+      "nhi_id": "arn:aws:secretsmanager:us-east-1:000000000000:secret:prod/db-master",
+      "nhi_type": "secret",
+      "title": "Secret has rotation disabled",
+      "severity": "MEDIUM",
+      "owasp_nhi": "OWASP NHI7: Long-Lived Secrets",
+      "nist_800_53": "NIST 800-53 IA-5 (Authenticator Management)",
+      "evidence": {
+        "rotation_enabled": false,
+        "last_rotated_days": null
+      },
+      "remediation": "Enable automatic rotation with an appropriate interval."
+    }
+  ]
+}
