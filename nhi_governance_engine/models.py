@@ -45,6 +45,7 @@ class Config:
     key_unused_days: int = 90
     role_unused_days: int = 90
     secret_max_rotation_days: int = 90
+    unused_service_days: int = 90
 
 
 
@@ -74,6 +75,7 @@ class NHIRecord:
     trust_policy: Optional[Dict[str, Any]] = None   # roles
     policy_statements: List[Dict[str, Any]] = field(default_factory=list)
     attached_managed_policies: List[Dict[str, Any]] = field(default_factory=list)  # roles/users: resolved managed policies
+    service_last_accessed: List[Dict[str, Any]] = field(default_factory=list)  # roles: IAM Access Advisor data
     rotation_enabled: Optional[bool] = None  # secrets
     last_rotated_days: Optional[int] = None  # secrets
     credential_model: CredentialModel = CredentialModel.UNKNOWN

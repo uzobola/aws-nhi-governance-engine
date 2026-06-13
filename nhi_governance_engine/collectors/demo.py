@@ -24,6 +24,11 @@ class DemoCollector(BaseCollector):
                 trust_policy={"Statement": [{"Effect": "Allow",
                               "Principal": {"AWS": "*"}, "Action": "sts:AssumeRole"}]},
                 policy_statements=[{"Effect": "Allow", "Action": "*", "Resource": "*"}],
+                service_last_accessed=[  # Access Advisor: admin grant, but only S3 is ever touched
+                    {"service": "s3", "last_authenticated_days": 5},
+                    {"service": "dynamodb", "last_authenticated_days": None},
+                    {"service": "ec2", "last_authenticated_days": None},
+                    {"service": "iam", "last_authenticated_days": 400}],
             ),
             NHIRecord(  # IAM user with an old static key -> credential hygiene
                 id="arn:aws:iam::000000000000:user/ci-deploy",
@@ -43,6 +48,32 @@ class DemoCollector(BaseCollector):
                               "Action": "sts:AssumeRole"}]},
                 policy_statements=[{"Effect": "Allow", "Action": ["dynamodb:GetItem"],
                                     "Resource": "arn:aws:dynamodb:*:*:table/orders"}],
+            ),
+            NHIRecord(  # clean except: cross-account trust to a partner, no ExternalId
+                id="arn:aws:iam::000000000000:role/partner-integration",
+                name="partner-integration", nhi_type=NHIType.IAM_ROLE,
+                tags={"Owner": "integrations@corp.com"},
+                created_days_ago=120, last_used_days=3,
+                trust_policy={"Statement": [{"Effect": "Allow",
+                              "Principal": {"AWS": "arn:aws:iam::999988887777:root"},
+                              "Action": "sts:AssumeRole"}]},
+                policy_statements=[{"Effect": "Allow", "Action": ["s3:GetObject"],
+                                    "Resource": "arn:aws:s3:::partner-data/*"}],
+            ),
+            NHIRecord(  # clean except: GitHub OIDC trust whose sub is not scoped to a repo
+                id="arn:aws:iam::000000000000:role/ci-oidc-deployer",
+                name="ci-oidc-deployer", nhi_type=NHIType.IAM_ROLE,
+                tags={"Owner": "platform@corp.com"},
+                created_days_ago=45, last_used_days=1,
+                trust_policy={"Statement": [{"Effect": "Allow",
+                              "Principal": {"Federated":
+                                  "arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com"},
+                              "Action": "sts:AssumeRoleWithWebIdentity",
+                              "Condition": {
+                                  "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
+                                  "StringLike": {"token.actions.githubusercontent.com:sub": "*"}}}]},
+                policy_statements=[{"Effect": "Allow", "Action": ["ecr:GetAuthorizationToken"],
+                                    "Resource": "*"}],
             ),
             NHIRecord(  # secret with rotation disabled -> long-lived secret
                 id="arn:aws:secretsmanager:us-east-1:000000000000:secret:prod/db-master",

@@ -20,7 +20,10 @@ from nhi_governance_engine import (
     detect_static_credential_model,
     detect_wildcard_policy,
     detect_permissive_trust_policy,
+    detect_cross_account_without_externalid,
+    detect_federated_trust_gaps,
     detect_overprivileged_managed_policy,
+    detect_unused_permissions,
     detect_secret_no_rotation,
     run_detectors,
 )
@@ -239,3 +242,89 @@ def test_scoped_managed_policy_not_flagged():
                         "statements": [{"Effect": "Allow", "Action": ["s3:GetObject"],
                                         "Resource": "arn:aws:s3:::b/*"}]}])
     assert fire(detect_overprivileged_managed_policy, rec) == []
+
+
+# --- cross-account trust without ExternalId --------------------------------
+
+def _role(trust):
+    return NHIRecord(id="arn:aws:iam::000000000000:role/r", name="r",
+                     nhi_type=NHIType.IAM_ROLE, tags={"Owner": "t"},
+                     trust_policy=trust)
+
+def test_cross_account_without_externalid_flagged():
+    rec = _role({"Statement": [{"Effect": "Allow",
+                 "Principal": {"AWS": "arn:aws:iam::999988887777:root"},
+                 "Action": "sts:AssumeRole"}]})
+    out = fire(detect_cross_account_without_externalid, rec)
+    assert len(out) == 1 and out[0].severity == Severity.HIGH
+
+def test_cross_account_with_externalid_not_flagged():
+    rec = _role({"Statement": [{"Effect": "Allow",
+                 "Principal": {"AWS": "arn:aws:iam::999988887777:root"},
+                 "Action": "sts:AssumeRole",
+                 "Condition": {"StringEquals": {"sts:ExternalId": "shared-secret"}}}]})
+    assert fire(detect_cross_account_without_externalid, rec) == []
+
+def test_same_account_trust_not_flagged():
+    rec = _role({"Statement": [{"Effect": "Allow",
+                 "Principal": {"AWS": "arn:aws:iam::000000000000:root"},
+                 "Action": "sts:AssumeRole"}]})
+    assert fire(detect_cross_account_without_externalid, rec) == []
+
+
+# --- federated (OIDC) trust gaps -------------------------------------------
+
+def _gh(condition):
+    return _role({"Statement": [{"Effect": "Allow",
+                  "Principal": {"Federated":
+                      "arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com"},
+                  "Action": "sts:AssumeRoleWithWebIdentity",
+                  "Condition": condition}]})
+
+def test_oidc_missing_aud_flagged():
+    rec = _gh({"StringLike": {"token.actions.githubusercontent.com:sub":
+                              "repo:uzobola/aws-nhi-governance-engine:ref:refs/heads/main"}})
+    ids = {f.finding_id.split(":")[0] for f in fire(detect_federated_trust_gaps, rec)}
+    assert "NHI-OIDC-NO-AUD" in ids
+
+def test_oidc_missing_sub_flagged():
+    rec = _gh({"StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"}})
+    ids = {f.finding_id.split(":")[0] for f in fire(detect_federated_trust_gaps, rec)}
+    assert "NHI-OIDC-NO-SUB" in ids
+
+def test_github_oidc_unscoped_sub_flagged():
+    rec = _gh({"StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
+               "StringLike": {"token.actions.githubusercontent.com:sub": "*"}})
+    ids = {f.finding_id.split(":")[0] for f in fire(detect_federated_trust_gaps, rec)}
+    assert ids == {"NHI-GH-OIDC-UNSCOPED"}
+
+def test_github_oidc_scoped_sub_clean():
+    rec = _gh({"StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
+               "StringLike": {"token.actions.githubusercontent.com:sub":
+                              "repo:uzobola/aws-nhi-governance-engine:ref:refs/heads/main"}})
+    assert fire(detect_federated_trust_gaps, rec) == []
+
+
+# --- unused permissions (Access Advisor) -----------------------------------
+
+def _role_sla(sla):
+    return NHIRecord(id="arn:aws:iam::000000000000:role/r", name="r",
+                     nhi_type=NHIType.IAM_ROLE, tags={"Owner": "t"},
+                     service_last_accessed=sla)
+
+def test_unused_permissions_flagged_for_never_and_stale():
+    rec = _role_sla([{"service": "s3", "last_authenticated_days": 3},
+                     {"service": "ec2", "last_authenticated_days": None},
+                     {"service": "iam", "last_authenticated_days": 400}])
+    out = fire(detect_unused_permissions, rec)
+    assert len(out) == 1 and out[0].severity == Severity.MEDIUM
+    assert out[0].evidence["unused_services"] == ["ec2", "iam"]
+
+def test_unused_permissions_clean_when_all_recent():
+    rec = _role_sla([{"service": "s3", "last_authenticated_days": 3},
+                     {"service": "dynamodb", "last_authenticated_days": 10}])
+    assert fire(detect_unused_permissions, rec) == []
+
+def test_unused_permissions_skips_when_no_access_advisor_data():
+    rec = _role_sla([])
+    assert fire(detect_unused_permissions, rec) == []

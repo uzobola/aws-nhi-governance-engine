@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+import time
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from ..models import NHIRecord, NHIType, AccessKey, CredentialModel
@@ -66,10 +67,32 @@ class AwsCollector(BaseCollector):
                     trust_policy=r.get("AssumeRolePolicyDocument"),
                     policy_statements=statements,
                     attached_managed_policies=managed,
+                    service_last_accessed=self._service_last_accessed(r["Arn"]),
                 )
                 rec.credential_model = classify_credential_model(rec)
                 out.append(rec)
         return out
+
+    def _service_last_accessed(self, arn: str) -> List[Dict[str, Any]]:
+        """IAM Access Advisor: generate + poll last-accessed details so the engine
+        can flag services granted but never (or no longer) used. Bounded poll;
+        skips gracefully on timeout or error rather than failing the scan.
+        TODO: at scale, generate all jobs first then poll, to parallelize."""
+        try:
+            job = self.iam.generate_service_last_accessed_details(Arn=arn)["JobId"]
+        except Exception:
+            return []
+        for _ in range(10):                       # bounded ~10s; jobs are usually quick
+            resp = self.iam.get_service_last_accessed_details(JobId=job)
+            status = resp.get("JobStatus")
+            if status == "COMPLETED":
+                return [{"service": s.get("ServiceNamespace"),
+                         "last_authenticated_days": self._days_since(s.get("LastAuthenticated"))}
+                        for s in resp.get("ServicesLastAccessed", [])]
+            if status == "FAILED":
+                return []
+            time.sleep(1)
+        return []
 
     def _resolve_managed_policies(self, attached: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Resolve attached managed policies (AWS-managed and customer-managed)
