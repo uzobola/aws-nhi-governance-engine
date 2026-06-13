@@ -61,19 +61,19 @@ Offline, no credentials needed:
 
 ```
 pip install -r requirements.txt
-python nhi_governance_engine.py --demo --output report.json
+python -m nhi_governance_engine --demo --output report.json
 ```
 
 Against a real account, read-only:
 
 ```
-python nhi_governance_engine.py --region us-east-1 --output nhi-report.json
+python -m nhi_governance_engine --region us-east-1 --output nhi-report.json
 ```
 
 See the least-privilege policy the engine needs:
 
 ```
-python nhi_governance_engine.py --print-policy
+python -m nhi_governance_engine --print-policy
 ```
 
 `sample_report.json` in this repo is the output of a demo run, so you can see the evidence format without running anything.

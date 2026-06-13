@@ -45,7 +45,7 @@ jobs:
         run: pip install boto3
 
       - name: Run NHI governance engine
-        run: python nhi_governance_engine.py --region us-east-1 --output nhi-report.json
+        run: python -m nhi_governance_engine --region us-east-1 --output nhi-report.json
 
       - name: Upload findings report
         if: always()
