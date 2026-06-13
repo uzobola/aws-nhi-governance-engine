@@ -109,10 +109,10 @@ A before-and-after, run against the live account (account ID redacted, reports k
 | Phase | Status |
 |---|---|
 | Phase 1: discovery, seven detectors, control mapping, CI gate | Complete |
-| Phase 2: workload identity federation (OIDC) | Complete (live run, federated session verified) |
+| [Phase 2](PHASE-2.md): workload identity federation (OIDC) | Complete (live run, federated session verified) |
 | Access Advisor unused-permissions detector | Planned |
 | Cross-account trust and managed-policy resolution | Planned |
-| Phase 3: govern an AI agent as a non-human identity (Bedrock AgentCore) | Planned |
+| [Phase 3](PHASE-3.md): govern an AI agent as a non-human identity (Bedrock AgentCore) | Design intent |
 
 ## Layout
 
@@ -123,4 +123,5 @@ oidc-federation.tf                            Phase 2 OIDC provider, role, least
 .github/workflows/nhi-governance-scan.yml     scheduled scan via OIDC
 PHASE-2.md                                    federation rationale and proof loop
 sample_report.json                            example evidence output from a demo run
+PHASE-3.md                                    AI-agent governance design intent
 ```
