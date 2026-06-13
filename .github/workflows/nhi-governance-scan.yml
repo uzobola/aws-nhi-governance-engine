@@ -48,6 +48,7 @@ jobs:
         run: python nhi_governance_engine.py --region us-east-1 --output nhi-report.json
 
       - name: Upload findings report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nhi-report
