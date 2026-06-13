@@ -39,10 +39,16 @@ There is no AWS access key to create, store, or rotate. That is the point.
 
 This is the part that makes it portfolio evidence rather than a config change:
 
-- **Before:** run the engine while a static-key IAM user still backs the workload. It reports that user as `STATIC_LONG_LIVED` with a stale-key / long-lived-secret finding.
-- **After:** delete the IAM user's access key (the workflow no longer needs it), and run the engine again. The workload now authenticates as a federated role session, the static-key findings are gone, and the credential model for that path is `FEDERATED_OIDC`, the model the engine scores as best.
+- Before: the workflow ran as the `workshop-pipeline` IAM user, backed by a long-lived
+  access key. The engine scored it `STATIC_LONG_LIVED` and flagged it under NHI4.
+- After: the workflow authenticates via OIDC as a short-lived assumed-role session,
+  verified by `aws sts get-caller-identity` returning an `assumed-role` ARN rather than an
+  IAM user. No AWS key backs the scan, and nothing is stored in the repo or GitHub secrets.
 
-The engine detecting the problem and then confirming its own remediation is the loop worth showing in an interview.
+The `workshop-pipeline` user is retained in the sandbox as a deliberate `STATIC_LONG_LIVED`
+example, so the engine always has a real finding to surface. In production you would delete
+that key as part of offboarding.
+
 
 ## Controls
 

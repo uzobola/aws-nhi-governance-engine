@@ -10,13 +10,31 @@ The engine runs seven detectors over the identities it collects, each producing 
 
 | Detector | Severity | OWASP NHI |
 |---|---|---|
-| Missing owner | Medium | Ownership / governance gap |
-| Orphaned or stale role | Medium | NHI1 Improper Offboarding |
-| Aged access key | High | NHI7 Long-Lived Secrets |
-| Static credential model | Medium | NHI4 Insecure Authentication |
-| Wildcard policy | High | NHI5 Overprivileged NHI |
-| Permissive trust policy | Critical | NHI6 Insecure Cloud Deployment Config |
-| Unrotated secret | Medium | NHI7 Long-Lived Secrets |
+| Missing owner | Medium | NHI1:2025 Improper Offboarding |
+| Orphaned or stale role | Medium | NHI1:2025 Improper Offboarding |
+| Aged access key | High | NHI7:2025 Long-Lived Secrets |
+| Static credential model | Medium | NHI4:2025 Insecure Authentication |
+| Wildcard policy | High | NHI5:2025 Overprivileged NHI |
+| Permissive trust policy | Critical | NHI6:2025 Insecure Cloud Deployment Configurations |
+| Unrotated secret | Medium | NHI7:2025 Long-Lived Secrets |
+
+### Example finding
+
+The most severe detector catches a role whose trust policy lets any principal assume it.
+From a demo run (`sample_report.json`):
+
+​```json
+{
+  "finding_id": "NHI-TRUST-WILDCARD:legacy-etl-runner",
+  "nhi_type": "iam_role",
+  "title": "Role trust policy allows any principal to assume it",
+  "severity": "CRITICAL",
+  "owasp_nhi": "NHI6:2025 Insecure Cloud Deployment Configurations",
+  "nist_800_53": "NIST 800-53 AC-6 (Least Privilege); NIST 800-53 IA-9 (Service Identification and Authentication)",
+  "evidence": { "trust_statement": { "Effect": "Allow", "Principal": { "AWS": "*" }, "Action": "sts:AssumeRole" } },
+  "remediation": "Restrict the trust policy to specific, intended principals."
+}
+​```
 
 Across those findings it exercises the NIST 800-53 AC-2, AC-6, IA-5, and IA-9 families: account management, least privilege, authenticator and secret management, and service identification and authentication.
 
@@ -67,7 +85,7 @@ The worst finding the engine can raise is a long-lived static access key, so the
 | Phase | Status |
 |---|---|
 | Phase 1: discovery, seven detectors, control mapping, CI gate | Complete |
-| Phase 1.5: OIDC-federated workload identity | Scaffolding ready, applying |
+| Phase 1.5: OIDC-federated workload identity | Complete (live run, federated session verified) |
 | Access Advisor unused-permissions detector | Planned |
 | Cross-account trust and managed-policy resolution | Planned |
 | Phase 3: govern an AI agent as a non-human identity (Bedrock AgentCore) | Planned |
@@ -82,3 +100,38 @@ oidc-federation.tf                            Phase 1.5 OIDC provider, role, lea
 PHASE-1.5.md                                  federation rationale and proof loop
 sample_report.json                            example evidence output from a demo run
 ```
+
+### Proof (live run)
+
+The scheduled scan runs entirely on short-lived, federated credentials. The workflow's
+identity step confirms it:
+
+```
+
+​```
+$ aws sts get-caller-identity
+{
+  "UserId": "AROA...:GitHubActions",
+  "Account": "<ACCOUNT_ID>",
+  "Arn": "arn:aws:sts::<ACCOUNT_ID>:assumed-role/github-actions-nhi-scan/GitHubActions"
+}
+​```
+
+The `assumed-role` ARN and the `AROA` user ID are an STS session, not a static-key IAM
+user. No AWS access key exists in the repository or in GitHub secrets; the only stored
+value is the role ARN, which is not sensitive.
+
+The engine flags the very credential model the CI moved off of. Before Phase 1.5 the scan
+ran as the `workshop-pipeline` IAM user; that user still appears in the account scored
+`static_long_lived` under NHI4, which is exactly the finding type the migration resolves
+for the workload itself.
+
+A before-and-after, run against the live account (account ID redacted, reports kept local
+per .gitignore):
+
+- Before: 9 findings. The scan role itself flagged for no owner; `workshop-pipeline` scored
+  `static_long_lived`.
+- After: 8 findings. Scan role clean (Owner tag applied), every finding control-mapped in
+  canonical `NHIx:2025` form.
+  
+  ```

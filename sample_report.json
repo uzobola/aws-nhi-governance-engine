@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T18:33:57.563783+00:00",
+  "generated_at": "2026-06-13T03:59:55.828756+00:00",
   "account_id": "000000000000",
   "scope": "iam_roles, iam_users+keys, secretsmanager_secrets (read-only)",
   "summary": {
@@ -25,7 +25,7 @@
       "nhi_type": "iam_role",
       "title": "Non-human identity has no accountable owner",
       "severity": "MEDIUM",
-      "owasp_nhi": "OWASP NHI1: Improper Offboarding",
+      "owasp_nhi": "NHI1:2025 Improper Offboarding",
       "nist_800_53": "NIST 800-53 AC-2 (Account Management)",
       "evidence": {
         "tags": {}
@@ -38,7 +38,7 @@
       "nhi_type": "iam_role",
       "title": "Role unused for 410 days",
       "severity": "MEDIUM",
-      "owasp_nhi": "OWASP NHI1: Improper Offboarding",
+      "owasp_nhi": "NHI1:2025 Improper Offboarding",
       "nist_800_53": "NIST 800-53 AC-2 (Account Management); NIST 800-53 AC-6 (Least Privilege)",
       "evidence": {
         "last_used_days": 410
@@ -51,7 +51,7 @@
       "nhi_type": "iam_role",
       "title": "Policy grants Action:* on Resource:* (effective admin)",
       "severity": "HIGH",
-      "owasp_nhi": "OWASP NHI5: Overprivileged NHI",
+      "owasp_nhi": "NHI5:2025 Overprivileged NHI",
       "nist_800_53": "NIST 800-53 AC-6 (Least Privilege)",
       "evidence": {
         "statement": {
@@ -68,7 +68,7 @@
       "nhi_type": "iam_role",
       "title": "Role trust policy allows any principal to assume it",
       "severity": "CRITICAL",
-      "owasp_nhi": "OWASP NHI6: Insecure Cloud Deployment Config",
+      "owasp_nhi": "NHI6:2025 Insecure Cloud Deployment Configurations",
       "nist_800_53": "NIST 800-53 AC-6 (Least Privilege); NIST 800-53 IA-9 (Service Identification and Authentication)",
       "evidence": {
         "trust_statement": {
@@ -87,7 +87,7 @@
       "nhi_type": "iam_user",
       "title": "Active access key is 420 days old (no rotation)",
       "severity": "HIGH",
-      "owasp_nhi": "OWASP NHI7: Long-Lived Secrets",
+      "owasp_nhi": "NHI7:2025 Long-Lived Secrets",
       "nist_800_53": "NIST 800-53 IA-5 (Authenticator Management)",
       "evidence": {
         "key_id": "AKIA...OLD",
@@ -102,7 +102,7 @@
       "nhi_type": "iam_user",
       "title": "Workload authenticates with long-lived static credentials",
       "severity": "MEDIUM",
-      "owasp_nhi": "OWASP NHI4: Insecure Authentication",
+      "owasp_nhi": "NHI4:2025 Insecure Authentication",
       "nist_800_53": "NIST 800-53 IA-5 (Authenticator Management)",
       "evidence": {
         "credential_model": "static_long_lived"
@@ -115,7 +115,7 @@
       "nhi_type": "secret",
       "title": "Secret has rotation disabled",
       "severity": "MEDIUM",
-      "owasp_nhi": "OWASP NHI7: Long-Lived Secrets",
+      "owasp_nhi": "NHI7:2025 Long-Lived Secrets",
       "nist_800_53": "NIST 800-53 IA-5 (Authenticator Management)",
       "evidence": {
         "rotation_enabled": false,
