@@ -23,6 +23,7 @@ from nhi_governance_engine import (
     detect_cross_account_without_externalid,
     detect_federated_trust_gaps,
     detect_overprivileged_managed_policy,
+    detect_unused_permissions,
     detect_secret_no_rotation,
     run_detectors,
 )
@@ -302,3 +303,28 @@ def test_github_oidc_scoped_sub_clean():
                "StringLike": {"token.actions.githubusercontent.com:sub":
                               "repo:uzobola/aws-nhi-governance-engine:ref:refs/heads/main"}})
     assert fire(detect_federated_trust_gaps, rec) == []
+
+
+# --- unused permissions (Access Advisor) -----------------------------------
+
+def _role_sla(sla):
+    return NHIRecord(id="arn:aws:iam::000000000000:role/r", name="r",
+                     nhi_type=NHIType.IAM_ROLE, tags={"Owner": "t"},
+                     service_last_accessed=sla)
+
+def test_unused_permissions_flagged_for_never_and_stale():
+    rec = _role_sla([{"service": "s3", "last_authenticated_days": 3},
+                     {"service": "ec2", "last_authenticated_days": None},
+                     {"service": "iam", "last_authenticated_days": 400}])
+    out = fire(detect_unused_permissions, rec)
+    assert len(out) == 1 and out[0].severity == Severity.MEDIUM
+    assert out[0].evidence["unused_services"] == ["ec2", "iam"]
+
+def test_unused_permissions_clean_when_all_recent():
+    rec = _role_sla([{"service": "s3", "last_authenticated_days": 3},
+                     {"service": "dynamodb", "last_authenticated_days": 10}])
+    assert fire(detect_unused_permissions, rec) == []
+
+def test_unused_permissions_skips_when_no_access_advisor_data():
+    rec = _role_sla([])
+    assert fire(detect_unused_permissions, rec) == []

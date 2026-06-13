@@ -58,3 +58,28 @@ def detect_overprivileged_managed_policy(rec: NHIRecord, cfg: Config) -> Iterabl
                 remediation="Replace broad managed policies with least-privilege "
                             "policies scoped to the workload's actual actions. "
                             "TODO: confirm with Access Advisor last-accessed data.")
+
+
+def detect_unused_permissions(rec: NHIRecord, cfg: Config) -> Iterable[Finding]:
+    """Access Advisor evidence: services the role is granted but has not used,
+    either never or not within the window. This turns "looks over-scoped" into a
+    concrete, defensible right-sizing list backed by last-accessed data, and
+    closes the loop on the wildcard / managed-admin remediation hints."""
+    if rec.nhi_type != NHIType.IAM_ROLE or not rec.service_last_accessed:
+        return
+    unused = [s for s in rec.service_last_accessed
+              if s.get("last_authenticated_days") is None
+              or s["last_authenticated_days"] > cfg.unused_service_days]
+    if unused:
+        names = sorted(s.get("service") for s in unused if s.get("service"))
+        yield Finding(
+            finding_id=_fid("NHI-UNUSED-PERMS", rec), nhi_id=rec.id,
+            nhi_type=rec.nhi_type.value,
+            title=f"{len(unused)} granted service(s) unused per Access Advisor",
+            severity=Severity.MEDIUM, owasp_nhi=NHI_OVERPRIVILEGED, nist_800_53=AC_6,
+            evidence={"unused_services": names,
+                      "window_days": cfg.unused_service_days,
+                      "detail": unused},
+            remediation="Remove permissions for services the role does not use. "
+                        "Last-accessed data is the evidence for right-sizing the "
+                        "policy to least privilege.")

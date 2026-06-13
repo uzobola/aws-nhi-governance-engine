@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-13T22:03:58.655757+00:00",
+  "generated_at": "2026-06-13T22:19:35.195297+00:00",
   "account_id": "000000000000",
   "scope": "iam_roles, iam_users+keys, secretsmanager_secrets (read-only)",
   "summary": {
@@ -9,11 +9,11 @@
       "iam_user": 1,
       "secret": 1
     },
-    "findings_total": 10,
+    "findings_total": 11,
     "findings_by_severity": {
       "INFO": 0,
       "LOW": 0,
-      "MEDIUM": 4,
+      "MEDIUM": 5,
       "HIGH": 5,
       "CRITICAL": 1
     }
@@ -61,6 +61,38 @@
         }
       },
       "remediation": "Scope to the specific actions/resources actually used. TODO: confirm with Access Advisor last-accessed data."
+    },
+    {
+      "finding_id": "NHI-UNUSED-PERMS:legacy-etl-runner",
+      "nhi_id": "arn:aws:iam::000000000000:role/legacy-etl-runner",
+      "nhi_type": "iam_role",
+      "title": "3 granted service(s) unused per Access Advisor",
+      "severity": "MEDIUM",
+      "owasp_nhi": "NHI5:2025 Overprivileged NHI",
+      "nist_800_53": "NIST 800-53 AC-6 (Least Privilege)",
+      "evidence": {
+        "unused_services": [
+          "dynamodb",
+          "ec2",
+          "iam"
+        ],
+        "window_days": 90,
+        "detail": [
+          {
+            "service": "dynamodb",
+            "last_authenticated_days": null
+          },
+          {
+            "service": "ec2",
+            "last_authenticated_days": null
+          },
+          {
+            "service": "iam",
+            "last_authenticated_days": 400
+          }
+        ]
+      },
+      "remediation": "Remove permissions for services the role does not use. Last-accessed data is the evidence for right-sizing the policy to least privilege."
     },
     {
       "finding_id": "NHI-TRUST-WILDCARD:legacy-etl-runner",

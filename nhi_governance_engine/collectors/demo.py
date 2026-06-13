@@ -24,6 +24,11 @@ class DemoCollector(BaseCollector):
                 trust_policy={"Statement": [{"Effect": "Allow",
                               "Principal": {"AWS": "*"}, "Action": "sts:AssumeRole"}]},
                 policy_statements=[{"Effect": "Allow", "Action": "*", "Resource": "*"}],
+                service_last_accessed=[  # Access Advisor: admin grant, but only S3 is ever touched
+                    {"service": "s3", "last_authenticated_days": 5},
+                    {"service": "dynamodb", "last_authenticated_days": None},
+                    {"service": "ec2", "last_authenticated_days": None},
+                    {"service": "iam", "last_authenticated_days": 400}],
             ),
             NHIRecord(  # IAM user with an old static key -> credential hygiene
                 id="arn:aws:iam::000000000000:user/ci-deploy",
