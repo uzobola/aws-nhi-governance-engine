@@ -1,5 +1,5 @@
 # =============================================================================
-# Phase 1.5 - Federated Workload Identity (GitHub Actions OIDC -> AWS)
+# Phase 2 — Workload Identity Federation (GitHub Actions OIDC -> AWS)
 # =============================================================================
 # Replaces long-lived static AWS access keys (the worst credential model the
 # NHI engine flags) with short-lived, federated credentials. No secrets stored
@@ -39,14 +39,14 @@ resource "aws_iam_role" "github_actions_nhi_scan" {
   name = "github-actions-nhi-scan"
 
   tags = {
-    Owner     = "uzobolarinwa@yahoo.com"  # set to your team or email
+    Owner     = "uzo@uzobolarinwa.com"  # set to email or whatever form of communication i choose
     Purpose   = "nhi-governance-scan"
     ManagedBy = "terraform"
   }
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
+    Statement = [{S
       Effect    = "Allow"
       Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
       Action    = "sts:AssumeRoleWithWebIdentity"
