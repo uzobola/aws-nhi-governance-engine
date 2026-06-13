@@ -53,6 +53,9 @@ class AwsCollector(BaseCollector):
                 tags = {t["Key"]: t["Value"]
                         for t in self.iam.list_role_tags(RoleName=r["RoleName"]).get("Tags", [])}
                 statements = self._inline_role_statements(r["RoleName"])
+                managed = self._resolve_managed_policies(
+                    self.iam.list_attached_role_policies(
+                        RoleName=r["RoleName"]).get("AttachedPolicies", []))
                 rec = NHIRecord(
                     id=r["Arn"],
                     name=r["RoleName"],
@@ -62,9 +65,32 @@ class AwsCollector(BaseCollector):
                     last_used_days=self._days_since(last_used),
                     trust_policy=r.get("AssumeRolePolicyDocument"),
                     policy_statements=statements,
+                    attached_managed_policies=managed,
                 )
                 rec.credential_model = classify_credential_model(rec)
                 out.append(rec)
+        return out
+
+    def _resolve_managed_policies(self, attached: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Resolve attached managed policies (AWS-managed and customer-managed)
+        to their statements via the default version. This is where real-world
+        privilege usually lives, so the inline-only view misses it."""
+        out: List[Dict[str, Any]] = []
+        for ap in attached:
+            arn = ap["PolicyArn"]
+            try:
+                ver = self.iam.get_policy(PolicyArn=arn)["Policy"]["DefaultVersionId"]
+                doc = self.iam.get_policy_version(
+                    PolicyArn=arn, VersionId=ver)["PolicyVersion"]["Document"]
+                statements = _as_list(doc.get("Statement", []))
+            except Exception:
+                statements = []
+            out.append({
+                "name": ap["PolicyName"],
+                "arn": arn,
+                "aws_managed": arn.startswith("arn:aws:iam::aws:policy/"),
+                "statements": statements,
+            })
         return out
 
     def _inline_role_statements(self, role_name: str) -> List[Dict[str, Any]]:

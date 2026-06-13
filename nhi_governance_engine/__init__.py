@@ -38,6 +38,7 @@ from .detectors import (
     DETECTORS,
     detect_missing_owner, detect_orphaned_role, detect_stale_access_key,
     detect_static_credential_model, detect_wildcard_policy,
+    detect_overprivileged_managed_policy,
     detect_permissive_trust_policy, detect_secret_no_rotation,
 )
 
@@ -52,6 +53,7 @@ from .detectors import (
     DETECTORS,
     detect_missing_owner, detect_orphaned_role, detect_stale_access_key,
     detect_static_credential_model, detect_wildcard_policy,
+    detect_overprivileged_managed_policy,
     detect_permissive_trust_policy, detect_secret_no_rotation,
 )
 from .engine import run_detectors

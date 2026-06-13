@@ -12,6 +12,8 @@ READONLY_POLICY = {
         "Action": [
             "iam:ListRoles", "iam:ListRoleTags", "iam:ListRolePolicies",
             "iam:GetRolePolicy", "iam:ListUsers", "iam:ListUserTags",
+            "iam:ListAttachedRolePolicies", "iam:ListAttachedUserPolicies",
+            "iam:GetPolicy", "iam:GetPolicyVersion",
             "iam:ListAccessKeys", "iam:GetAccessKeyLastUsed",
             "iam:GenerateServiceLastAccessedDetails",
             "iam:GetServiceLastAccessedDetails",

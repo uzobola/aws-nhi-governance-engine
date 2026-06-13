@@ -5,7 +5,7 @@
 
 from .ownership import detect_missing_owner, detect_orphaned_role
 from .credentials import detect_stale_access_key, detect_static_credential_model
-from .privilege import detect_wildcard_policy
+from .privilege import detect_wildcard_policy, detect_overprivileged_managed_policy
 from .trust_policy import detect_permissive_trust_policy
 from .secrets import detect_secret_no_rotation
 
@@ -15,6 +15,7 @@ DETECTORS = [
     detect_stale_access_key,
     detect_static_credential_model,
     detect_wildcard_policy,
+    detect_overprivileged_managed_policy,
     detect_permissive_trust_policy,
     detect_secret_no_rotation,
 ]
