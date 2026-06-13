@@ -89,11 +89,11 @@ class Config:
 # (2025). Verify against the current published list before you cite it in an
 # interview or report; the names are the durable part, the numbering can shift.
 
-NHI_IMPROPER_OFFBOARDING = "OWASP NHI1: Improper Offboarding"
-NHI_INSECURE_AUTH = "OWASP NHI4: Insecure Authentication"
-NHI_OVERPRIVILEGED = "OWASP NHI5: Overprivileged NHI"
-NHI_INSECURE_CLOUD_CONFIG = "OWASP NHI6: Insecure Cloud Deployment Config"
-NHI_LONG_LIVED_SECRETS = "OWASP NHI7: Long-Lived Secrets"
+NHI_IMPROPER_OFFBOARDING = "NHI1:2025 Improper Offboarding"
+NHI_INSECURE_AUTH = "NHI4:2025 Insecure Authentication"
+NHI_OVERPRIVILEGED = "NHI5:2025 Overprivileged NHI"
+NHI_INSECURE_CLOUD_CONFIG = "NHI6:2025 Insecure Cloud Deployment Configurations"
+NHI_LONG_LIVED_SECRETS = "NHI7:2025 Long-Lived Secrets"
 
 AC_2 = "NIST 800-53 AC-2 (Account Management)"
 AC_6 = "NIST 800-53 AC-6 (Least Privilege)"
