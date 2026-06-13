@@ -44,6 +44,32 @@ class DemoCollector(BaseCollector):
                 policy_statements=[{"Effect": "Allow", "Action": ["dynamodb:GetItem"],
                                     "Resource": "arn:aws:dynamodb:*:*:table/orders"}],
             ),
+            NHIRecord(  # clean except: cross-account trust to a partner, no ExternalId
+                id="arn:aws:iam::000000000000:role/partner-integration",
+                name="partner-integration", nhi_type=NHIType.IAM_ROLE,
+                tags={"Owner": "integrations@corp.com"},
+                created_days_ago=120, last_used_days=3,
+                trust_policy={"Statement": [{"Effect": "Allow",
+                              "Principal": {"AWS": "arn:aws:iam::999988887777:root"},
+                              "Action": "sts:AssumeRole"}]},
+                policy_statements=[{"Effect": "Allow", "Action": ["s3:GetObject"],
+                                    "Resource": "arn:aws:s3:::partner-data/*"}],
+            ),
+            NHIRecord(  # clean except: GitHub OIDC trust whose sub is not scoped to a repo
+                id="arn:aws:iam::000000000000:role/ci-oidc-deployer",
+                name="ci-oidc-deployer", nhi_type=NHIType.IAM_ROLE,
+                tags={"Owner": "platform@corp.com"},
+                created_days_ago=45, last_used_days=1,
+                trust_policy={"Statement": [{"Effect": "Allow",
+                              "Principal": {"Federated":
+                                  "arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com"},
+                              "Action": "sts:AssumeRoleWithWebIdentity",
+                              "Condition": {
+                                  "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
+                                  "StringLike": {"token.actions.githubusercontent.com:sub": "*"}}}]},
+                policy_statements=[{"Effect": "Allow", "Action": ["ecr:GetAuthorizationToken"],
+                                    "Resource": "*"}],
+            ),
             NHIRecord(  # secret with rotation disabled -> long-lived secret
                 id="arn:aws:secretsmanager:us-east-1:000000000000:secret:prod/db-master",
                 name="prod/db-master", nhi_type=NHIType.SECRET,
