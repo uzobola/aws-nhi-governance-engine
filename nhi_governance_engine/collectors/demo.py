@@ -49,6 +49,22 @@ class DemoCollector(BaseCollector):
                 name="prod/db-master", nhi_type=NHIType.SECRET,
                 tags={"Owner": "dba@corp.com"},
                 created_days_ago=200, rotation_enabled=False, last_rotated_days=None),
+            NHIRecord(  # clean inline + owner + recently used, but admin via a managed policy
+                id="arn:aws:iam::000000000000:role/data-platform-app",
+                name="data-platform-app", nhi_type=NHIType.IAM_ROLE,
+                tags={"Owner": "data-team@corp.com"},
+                created_days_ago=90, last_used_days=2,
+                trust_policy={"Statement": [{"Effect": "Allow",
+                              "Principal": {"Service": "ecs-tasks.amazonaws.com"},
+                              "Action": "sts:AssumeRole"}]},
+                policy_statements=[{"Effect": "Allow", "Action": ["s3:GetObject"],
+                                    "Resource": "arn:aws:s3:::data-platform/*"}],
+                attached_managed_policies=[{
+                    "name": "AdministratorAccess",
+                    "arn": "arn:aws:iam::aws:policy/AdministratorAccess",
+                    "aws_managed": True,
+                    "statements": [{"Effect": "Allow", "Action": "*", "Resource": "*"}]}],
+            ),
         ]
         for r in recs:
             r.credential_model = classify_credential_model(r)

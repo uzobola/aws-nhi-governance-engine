@@ -73,6 +73,7 @@ class NHIRecord:
     access_keys: List[AccessKey] = field(default_factory=list)
     trust_policy: Optional[Dict[str, Any]] = None   # roles
     policy_statements: List[Dict[str, Any]] = field(default_factory=list)
+    attached_managed_policies: List[Dict[str, Any]] = field(default_factory=list)  # roles/users: resolved managed policies
     rotation_enabled: Optional[bool] = None  # secrets
     last_rotated_days: Optional[int] = None  # secrets
     credential_model: CredentialModel = CredentialModel.UNKNOWN

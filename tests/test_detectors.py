@@ -20,6 +20,7 @@ from nhi_governance_engine import (
     detect_static_credential_model,
     detect_wildcard_policy,
     detect_permissive_trust_policy,
+    detect_overprivileged_managed_policy,
     detect_secret_no_rotation,
     run_detectors,
 )
@@ -203,3 +204,38 @@ def test_healthy_role_produces_no_findings():
         credential_model=CredentialModel.STS_ASSUMED,
     )
     assert run_detectors([rec], CFG) == []
+
+# --- overprivileged managed policy ----------------------------------------
+
+def test_admin_managed_policy_flagged_by_arn():
+    rec = NHIRecord(id="arn:role/app", name="app", nhi_type=NHIType.IAM_ROLE,
+                    tags={"Owner": "team"},
+                    attached_managed_policies=[{
+                        "name": "AdministratorAccess",
+                        "arn": "arn:aws:iam::aws:policy/AdministratorAccess",
+                        "aws_managed": True, "statements": []}])
+    out = fire(detect_overprivileged_managed_policy, rec)
+    assert len(out) == 1
+    assert out[0].severity == Severity.HIGH
+    assert out[0].owasp_nhi.startswith("NHI5:2025")
+
+
+def test_wildcard_customer_managed_policy_flagged():
+    rec = NHIRecord(id="arn:role/app", name="app", nhi_type=NHIType.IAM_ROLE,
+                    tags={"Owner": "team"},
+                    attached_managed_policies=[{
+                        "name": "team-power", "arn": "arn:aws:iam::111:policy/team-power",
+                        "aws_managed": False,
+                        "statements": [{"Effect": "Allow", "Action": "*", "Resource": "*"}]}])
+    assert len(fire(detect_overprivileged_managed_policy, rec)) == 1
+
+
+def test_scoped_managed_policy_not_flagged():
+    rec = NHIRecord(id="arn:role/app", name="app", nhi_type=NHIType.IAM_ROLE,
+                    tags={"Owner": "team"},
+                    attached_managed_policies=[{
+                        "name": "s3-read", "arn": "arn:aws:iam::111:policy/s3-read",
+                        "aws_managed": False,
+                        "statements": [{"Effect": "Allow", "Action": ["s3:GetObject"],
+                                        "Resource": "arn:aws:s3:::b/*"}]}])
+    assert fire(detect_overprivileged_managed_policy, rec) == []

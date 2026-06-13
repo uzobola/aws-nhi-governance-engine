@@ -46,7 +46,7 @@ resource "aws_iam_role" "github_actions_nhi_scan" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{S
+    Statement = [{
       Effect    = "Allow"
       Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
       Action    = "sts:AssumeRoleWithWebIdentity"
@@ -81,6 +81,7 @@ resource "aws_iam_role_policy" "nhi_scan_readonly" {
         "iam:ListRoles", "iam:ListRoleTags", "iam:ListRolePolicies", "iam:GetRolePolicy",
         "iam:ListUsers", "iam:ListUserTags", "iam:ListAccessKeys", "iam:GetAccessKeyLastUsed",
         "iam:GenerateServiceLastAccessedDetails", "iam:GetServiceLastAccessedDetails",
+        "iam:ListAttachedRolePolicies","iam:ListAttachedUserPolicies", "iam:GetPolicy","iam:GetPolicyVersion",
         "secretsmanager:ListSecrets", "secretsmanager:DescribeSecret",
         "sts:GetCallerIdentity"
       ]
