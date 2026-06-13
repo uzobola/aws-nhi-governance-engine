@@ -1,13 +1,13 @@
 # =============================================================================
 # Phase 1.5 - Federated Workload Identity (GitHub Actions OIDC -> AWS)
 # =============================================================================
-# Replaces long-lived static AWS access keys (the worst credential model your
+# Replaces long-lived static AWS access keys (the worst credential model the
 # NHI engine flags) with short-lived, federated credentials. No secrets stored
 # in GitHub. The workload (the NHI engine's own scheduled scan) authenticates
 # by exchanging a GitHub-issued OIDC token for temporary STS credentials.
 #
-# Controls satisfied: NIST 800-53 IA-5 (authenticator management), AC-6 (least
-# privilege). Eliminates OWASP NHI7 (Long-Lived Secrets) for this workload.
+# Controls satisfied: NIST 800-53 IA-5 (authenticator management), 
+# AC-6 (least privilege). Eliminates OWASP NHI7 (Long-Lived Secrets) for this workload.
 # =============================================================================
 
 variable "github_repo" {
@@ -37,6 +37,12 @@ resource "aws_iam_openid_connect_provider" "github" {
 # Role assumable ONLY by the specified repo + ref via web identity.
 resource "aws_iam_role" "github_actions_nhi_scan" {
   name = "github-actions-nhi-scan"
+
+  tags = {
+    Owner     = "uzobolarinwa@yahoo.com"  # set to your team or email
+    Purpose   = "nhi-governance-scan"
+    ManagedBy = "terraform"
+  }
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
