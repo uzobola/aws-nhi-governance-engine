@@ -45,11 +45,17 @@ jobs:
         run: pip install boto3
 
       - name: Run NHI governance engine
-        run: python -m nhi_governance_engine --region us-east-1 --output nhi-report.json
+        run: python -m nhi_governance_engine --region us-east-1 --output nhi-report.json --md-output nhi-report.md
+
+      - name: Publish report to run summary
+        if: always()
+        run: cat nhi-report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload findings report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nhi-report
-          path: nhi-report.json
+          path: |
+            nhi-report.json
+            nhi-report.md

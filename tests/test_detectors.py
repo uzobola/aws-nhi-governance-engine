@@ -328,3 +328,35 @@ def test_unused_permissions_clean_when_all_recent():
 def test_unused_permissions_skips_when_no_access_advisor_data():
     rec = _role_sla([])
     assert fire(detect_unused_permissions, rec) == []
+
+
+# --- markdown reporter -----------------------------------------------------
+
+from nhi_governance_engine.reporting import render_markdown
+
+def _report(findings):
+    return {"generated_at": "2026-01-01T00:00:00Z", "account_id": "123456789012",
+            "scope": "test-scope",
+            "summary": {"nhi_total": 1,
+                        "nhi_by_type": {"iam_role": 1, "iam_user": 0, "secret": 0},
+                        "findings_total": len(findings),
+                        "findings_by_severity": {"INFO": 0, "LOW": 0, "MEDIUM": 0,
+                                                 "HIGH": len(findings), "CRITICAL": 0}},
+            "findings": findings}
+
+def test_markdown_renders_core_sections():
+    md = render_markdown(_report([{
+        "finding_id": "NHI-X:r", "nhi_id": "arn:aws:iam::123:role/r",
+        "nhi_type": "iam_role", "title": "Test finding", "severity": "HIGH",
+        "owasp_nhi": "NHI5:2025 Overprivileged NHI", "nist_800_53": "AC-6",
+        "evidence": {"unused_services": ["s3", "ec2"]}, "remediation": "Do the thing."}]))
+    assert "# NHI Governance Report" in md
+    assert "123456789012" in md
+    assert "### HIGH (1)" in md
+    assert "Test finding" in md
+    assert "s3, ec2" in md
+    assert "Do the thing." in md
+
+def test_markdown_handles_no_findings():
+    md = render_markdown(_report([]))
+    assert "No findings" in md
