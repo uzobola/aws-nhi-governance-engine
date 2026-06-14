@@ -10,7 +10,7 @@ import sys
 from .models import Config, Severity
 from .collectors import AwsCollector, DemoCollector
 from .engine import run_detectors
-from .reporting import build_report
+from .reporting import build_report, render_markdown
 from .policy import READONLY_POLICY
 
 
@@ -21,6 +21,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--profile", help="AWS profile name")
     p.add_argument("--region", help="AWS region")
     p.add_argument("--output", default="-", help="output JSON path ('-' = stdout)")
+    p.add_argument("--md-output", help="also write a Markdown report to this path")
     p.add_argument("--print-policy", action="store_true",
                    help="print the read-only IAM policy the engine needs and exit")
     args = p.parse_args(argv)
@@ -45,6 +46,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             fh.write(out)
         print(f"Wrote {len(findings)} findings across {len(records)} NHIs "
               f"-> {args.output}", file=sys.stderr)
+
+    if args.md_output:
+        with open(args.md_output, "w") as fh:
+            fh.write(render_markdown(report))
+        print(f"Wrote Markdown report -> {args.md_output}", file=sys.stderr)
 
     # Non-zero exit if anything HIGH/CRITICAL, so this can gate a pipeline later.
     severe = sum(1 for f in findings if f.severity in (Severity.HIGH, Severity.CRITICAL))
