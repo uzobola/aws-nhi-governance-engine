@@ -12,6 +12,7 @@ from .collectors import AwsCollector, DemoCollector
 from .engine import run_detectors
 from .reporting import build_report, render_markdown
 from .policy import READONLY_POLICY
+from .exceptions import load_exceptions
 
 
 
@@ -22,6 +23,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--region", help="AWS region")
     p.add_argument("--output", default="-", help="output JSON path ('-' = stdout)")
     p.add_argument("--md-output", help="also write a Markdown report to this path")
+    p.add_argument("--exceptions", help="path to a YAML/JSON exception register")
     p.add_argument("--print-policy", action="store_true",
                    help="print the read-only IAM policy the engine needs and exit")
     args = p.parse_args(argv)
@@ -36,7 +38,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     records = collector.collect()
     findings = run_detectors(records, cfg)
-    report = build_report(records, findings, collector.account_id())
+    exceptions = load_exceptions(args.exceptions) if args.exceptions else []
+    report = build_report(records, findings, collector.account_id(), exceptions)
 
     out = json.dumps(report, indent=2)
     if args.output == "-":
@@ -52,9 +55,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             fh.write(render_markdown(report))
         print(f"Wrote Markdown report -> {args.md_output}", file=sys.stderr)
 
-    # Non-zero exit if anything HIGH/CRITICAL, so this can gate a pipeline later.
-    severe = sum(1 for f in findings if f.severity in (Severity.HIGH, Severity.CRITICAL))
-    return 1 if severe else 0
+    # Non-zero exit if any HIGH/CRITICAL remains OPEN (accepted exceptions do
+    # not fail the gate). This is the net-residual-risk gate.
+    nr = report["summary"]["net_residual_by_severity"]
+    return 1 if (nr.get("HIGH", 0) + nr.get("CRITICAL", 0)) else 0
 
 
 if __name__ == "__main__":
