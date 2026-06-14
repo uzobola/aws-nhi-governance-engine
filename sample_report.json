@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-13T22:19:35.195297+00:00",
+  "generated_at": "2026-06-14T04:20:58.608972+00:00",
   "account_id": "000000000000",
   "scope": "iam_roles, iam_users+keys, secretsmanager_secrets (read-only)",
   "summary": {
@@ -16,6 +16,15 @@
       "MEDIUM": 5,
       "HIGH": 5,
       "CRITICAL": 1
+    },
+    "findings_open": 10,
+    "findings_accepted": 1,
+    "net_residual_by_severity": {
+      "INFO": 0,
+      "LOW": 0,
+      "MEDIUM": 4,
+      "HIGH": 5,
+      "CRITICAL": 1
     }
   },
   "findings": [
@@ -30,7 +39,8 @@
       "evidence": {
         "tags": {}
       },
-      "remediation": "Assign an Owner tag (team or email). Unowned NHIs are the ones that never get reviewed or offboarded."
+      "remediation": "Assign an Owner tag (team or email). Unowned NHIs are the ones that never get reviewed or offboarded.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-ROLE-STALE:legacy-etl-runner",
@@ -43,7 +53,8 @@
       "evidence": {
         "last_used_days": 410
       },
-      "remediation": "Disable, then remove after a retention window. Mirrors your on-prem disablement-before-deletion pattern."
+      "remediation": "Disable, then remove after a retention window. Mirrors your on-prem disablement-before-deletion pattern.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-WILDCARD-ADMIN:legacy-etl-runner",
@@ -60,7 +71,8 @@
           "Resource": "*"
         }
       },
-      "remediation": "Scope to the specific actions/resources actually used. TODO: confirm with Access Advisor last-accessed data."
+      "remediation": "Scope to the specific actions/resources actually used. TODO: confirm with Access Advisor last-accessed data.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-UNUSED-PERMS:legacy-etl-runner",
@@ -92,7 +104,8 @@
           }
         ]
       },
-      "remediation": "Remove permissions for services the role does not use. Last-accessed data is the evidence for right-sizing the policy to least privilege."
+      "remediation": "Remove permissions for services the role does not use. Last-accessed data is the evidence for right-sizing the policy to least privilege.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-TRUST-WILDCARD:legacy-etl-runner",
@@ -111,7 +124,8 @@
           "Action": "sts:AssumeRole"
         }
       },
-      "remediation": "Restrict the trust policy to specific, intended principals. This is the cross-account assumption risk your STS/AssumeRole detection pipeline watches for."
+      "remediation": "Restrict the trust policy to specific, intended principals. This is the cross-account assumption risk your STS/AssumeRole detection pipeline watches for.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-KEY-AGE-.OLD:ci-deploy",
@@ -126,7 +140,8 @@
         "age_days": 420,
         "last_used_days": 12
       },
-      "remediation": "Rotate the key, or migrate the workload off static keys to an STS-assumed role / OIDC federation."
+      "remediation": "Rotate the key, or migrate the workload off static keys to an STS-assumed role / OIDC federation.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-STATIC-CRED:ci-deploy",
@@ -139,7 +154,13 @@
       "evidence": {
         "credential_model": "static_long_lived"
       },
-      "remediation": "Target state is short-lived federated credentials (IRSA / GitHub OIDC) or an assumed role, not static keys."
+      "remediation": "Target state is short-lived federated credentials (IRSA / GitHub OIDC) or an assumed role, not static keys.",
+      "status": "accepted",
+      "exception": {
+        "reason": "Legacy CI runner; OIDC migration tracked in JIRA-1234",
+        "owner": "platform@corp.com",
+        "expires": "2026-12-31"
+      }
     },
     {
       "finding_id": "NHI-TRUST-NO-EXTERNALID:partner-integration",
@@ -161,7 +182,8 @@
           "Action": "sts:AssumeRole"
         }
       },
-      "remediation": "Add an sts:ExternalId condition for third-party cross-account access, or remove the external principal if the access is not intended."
+      "remediation": "Add an sts:ExternalId condition for third-party cross-account access, or remove the external principal if the access is not intended.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-GH-OIDC-UNSCOPED:ci-oidc-deployer",
@@ -189,7 +211,8 @@
           }
         }
       },
-      "remediation": "Scope sub to repo:OWNER/REPO:ref:refs/heads/BRANCH (or :environment:NAME) so only your repo and ref can assume the role."
+      "remediation": "Scope sub to repo:OWNER/REPO:ref:refs/heads/BRANCH (or :environment:NAME) so only your repo and ref can assume the role.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-SECRET-NO-ROTATION:prod/db-master",
@@ -203,7 +226,8 @@
         "rotation_enabled": false,
         "last_rotated_days": null
       },
-      "remediation": "Enable automatic rotation with an appropriate interval."
+      "remediation": "Enable automatic rotation with an appropriate interval.",
+      "status": "open"
     },
     {
       "finding_id": "NHI-MANAGED-ADMIN-AdministratorAccess:data-platform-app",
@@ -217,7 +241,8 @@
         "policy_arn": "arn:aws:iam::aws:policy/AdministratorAccess",
         "aws_managed": true
       },
-      "remediation": "Replace broad managed policies with least-privilege policies scoped to the workload's actual actions. TODO: confirm with Access Advisor last-accessed data."
+      "remediation": "Replace broad managed policies with least-privilege policies scoped to the workload's actual actions. TODO: confirm with Access Advisor last-accessed data.",
+      "status": "open"
     }
   ]
 }
