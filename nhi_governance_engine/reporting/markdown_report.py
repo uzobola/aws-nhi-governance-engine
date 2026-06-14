@@ -29,10 +29,37 @@ def _fmt_evidence(ev: Dict[str, Any]) -> str:
     return "; ".join(parts)
 
 
+def _finding_block(f: Dict[str, Any]) -> list:
+    nhi = f["nhi_id"].split("/")[-1]
+    block = [f"**{f['title']}** -- `{nhi}`  ",
+             f"{f['owasp_nhi']} \u00b7 {f['nist_800_53']}  "]
+    ev = _fmt_evidence(f.get("evidence", {}))
+    if ev:
+        block.append(f"Evidence: {ev}  ")
+    block.append(f"Remediation: {f['remediation']}")
+    block.append("")
+    return block
+
+
+def _accepted_block(f: Dict[str, Any]) -> list:
+    nhi = f["nhi_id"].split("/")[-1]
+    exc = f.get("exception", {}) or {}
+    owner = exc.get("owner") or "unspecified"
+    expires = exc.get("expires") or "no expiry"
+    reason = exc.get("reason") or ""
+    return [f"**{f['title']}** -- `{nhi}`  ",
+            f"{f['owasp_nhi']} \u00b7 {f['nist_800_53']}  ",
+            f"Accepted by {owner}, expires {expires} -- {reason}",
+            ""]
+
+
 def render_markdown(report: Dict[str, Any]) -> str:
     s = report["summary"]
-    by_sev = s["findings_by_severity"]
     by_type = s["nhi_by_type"]
+    net = s.get("net_residual_by_severity", s.get("findings_by_severity", {}))
+    total = s["findings_total"]
+    open_n = s.get("findings_open", total)
+    accepted_n = s.get("findings_accepted", 0)
     out = ["# NHI Governance Report", ""]
     out.append(f"**Account:** {report['account_id']}  ")
     out.append(f"**Generated:** {report['generated_at']}  ")
@@ -40,28 +67,31 @@ def render_markdown(report: Dict[str, Any]) -> str:
     out += ["", "## Summary", ""]
     type_str = ", ".join(f"{k}: {v}" for k, v in by_type.items() if v)
     out.append(f"- NHIs scanned: **{s['nhi_total']}** ({type_str})")
-    sev_str = ", ".join(f"{k} {by_sev.get(k, 0)}" for k in _SEV_ORDER)
-    out.append(f"- Findings: **{s['findings_total']}** ({sev_str})")
-    out += ["", "## Findings", ""]
+    out.append(f"- Findings: **{total}** (open: {open_n}, accepted: {accepted_n})")
+    net_str = ", ".join(f"{k} {net.get(k, 0)}" for k in _SEV_ORDER)
+    out.append(f"- Net residual risk: {net_str}")
+    out += [""]
 
     findings = report["findings"]
-    if not findings:
-        out.append("_No findings. All scanned NHIs passed every detector._")
-        return "\n".join(out) + "\n"
+    open_findings = [f for f in findings if f.get("status", "open") != "accepted"]
+    accepted_findings = [f for f in findings if f.get("status") == "accepted"]
 
-    for sev in _SEV_ORDER:
-        group = [f for f in findings if f["severity"] == sev]
-        if not group:
-            continue
-        out.append(f"### {sev} ({len(group)})")
+    out += ["## Open findings", ""]
+    if not open_findings:
+        out.append("_No open findings. All scanned NHIs passed, or all findings are accepted._")
         out.append("")
-        for f in group:
-            nhi = f["nhi_id"].split("/")[-1]
-            out.append(f"**{f['title']}** -- `{nhi}`  ")
-            out.append(f"{f['owasp_nhi']} \u00b7 {f['nist_800_53']}  ")
-            ev = _fmt_evidence(f.get("evidence", {}))
-            if ev:
-                out.append(f"Evidence: {ev}  ")
-            out.append(f"Remediation: {f['remediation']}")
+    else:
+        for sev in _SEV_ORDER:
+            group = [f for f in open_findings if f["severity"] == sev]
+            if not group:
+                continue
+            out.append(f"### {sev} ({len(group)})")
             out.append("")
+            for f in group:
+                out += _finding_block(f)
+
+    if accepted_findings:
+        out += [f"## Accepted exceptions ({len(accepted_findings)})", ""]
+        for f in accepted_findings:
+            out += _accepted_block(f)
     return "\n".join(out) + "\n"

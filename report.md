@@ -1,15 +1,16 @@
 # NHI Governance Report
 
 **Account:** 000000000000  
-**Generated:** 2026-06-14T00:02:44.643394+00:00  
+**Generated:** 2026-06-14T03:52:04.266655+00:00  
 **Scope:** iam_roles, iam_users+keys, secretsmanager_secrets (read-only)
 
 ## Summary
 
 - NHIs scanned: **7** (iam_role: 5, iam_user: 1, secret: 1)
-- Findings: **11** (CRITICAL 1, HIGH 5, MEDIUM 5, LOW 0, INFO 0)
+- Findings: **11** (open: 10, accepted: 1)
+- Net residual risk: CRITICAL 1, HIGH 5, MEDIUM 4, LOW 0, INFO 0
 
-## Findings
+## Open findings
 
 ### CRITICAL (1)
 
@@ -45,7 +46,7 @@ NHI5:2025 Overprivileged NHI · NIST 800-53 AC-6 (Least Privilege)
 Evidence: policy_arn = arn:aws:iam::aws:policy/AdministratorAccess; aws_managed = True  
 Remediation: Replace broad managed policies with least-privilege policies scoped to the workload's actual actions. TODO: confirm with Access Advisor last-accessed data.
 
-### MEDIUM (5)
+### MEDIUM (4)
 
 **Non-human identity has no accountable owner** -- `legacy-etl-runner`  
 NHI1:2025 Improper Offboarding · NIST 800-53 AC-2 (Account Management)  
@@ -62,13 +63,14 @@ NHI5:2025 Overprivileged NHI · NIST 800-53 AC-6 (Least Privilege)
 Evidence: unused_services = dynamodb, ec2, iam; window_days = 90; detail = [...]  
 Remediation: Remove permissions for services the role does not use. Last-accessed data is the evidence for right-sizing the policy to least privilege.
 
-**Workload authenticates with long-lived static credentials** -- `ci-deploy`  
-NHI4:2025 Insecure Authentication · NIST 800-53 IA-5 (Authenticator Management)  
-Evidence: credential_model = static_long_lived  
-Remediation: Target state is short-lived federated credentials (IRSA / GitHub OIDC) or an assumed role, not static keys.
-
 **Secret has rotation disabled** -- `db-master`  
 NHI7:2025 Long-Lived Secrets · NIST 800-53 IA-5 (Authenticator Management)  
 Evidence: rotation_enabled = False; last_rotated_days = None  
 Remediation: Enable automatic rotation with an appropriate interval.
+
+## Accepted exceptions (1)
+
+**Workload authenticates with long-lived static credentials** -- `ci-deploy`  
+NHI4:2025 Insecure Authentication · NIST 800-53 IA-5 (Authenticator Management)  
+Accepted by platform@corp.com, expires 2026-12-31 -- Legacy CI runner; OIDC migration tracked in JIRA-1234
 

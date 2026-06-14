@@ -359,4 +359,48 @@ def test_markdown_renders_core_sections():
 
 def test_markdown_handles_no_findings():
     md = render_markdown(_report([]))
-    assert "No findings" in md
+    assert "No open findings" in md
+
+
+# --- exception register ----------------------------------------------------
+
+from datetime import date
+from nhi_governance_engine.exceptions import is_active, match_exception
+from nhi_governance_engine.reporting import build_report
+from nhi_governance_engine.models import Finding
+
+def test_exception_active_and_expiry():
+    assert is_active({}, date(2026, 1, 1)) is True
+    assert is_active({"expires": "2026-12-31"}, date(2026, 6, 1)) is True
+    assert is_active({"expires": "2026-01-01"}, date(2026, 6, 1)) is False
+
+def test_match_exception_by_finding_id():
+    exc = [{"finding_id": "NHI-X:r", "reason": "ok", "owner": "o"}]
+    assert match_exception("NHI-X:r", exc, date(2026, 1, 1)) is not None
+    assert match_exception("NHI-Y:r", exc, date(2026, 1, 1)) is None
+
+def test_build_report_marks_accepted_and_excludes_from_net_residual():
+    findings = [Finding(finding_id="NHI-A:r", nhi_id="arn:aws:iam::1:role/r",
+                        nhi_type="iam_role", title="t", severity=Severity.HIGH,
+                        owasp_nhi="NHI5:2025 x", nist_800_53="AC-6",
+                        evidence={}, remediation="fix")]
+    recs = [NHIRecord(id="arn:aws:iam::1:role/r", name="r", nhi_type=NHIType.IAM_ROLE)]
+    rep = build_report(recs, findings, "123",
+                       [{"finding_id": "NHI-A:r", "reason": "accepted", "owner": "o"}])
+    assert rep["summary"]["findings_accepted"] == 1
+    assert rep["summary"]["findings_open"] == 0
+    assert rep["summary"]["net_residual_by_severity"]["HIGH"] == 0
+    assert rep["summary"]["findings_by_severity"]["HIGH"] == 1   # total still counts it
+    assert rep["findings"][0]["status"] == "accepted"
+    assert rep["findings"][0]["exception"]["reason"] == "accepted"
+
+def test_build_report_open_when_no_matching_exception():
+    findings = [Finding(finding_id="NHI-A:r", nhi_id="arn:aws:iam::1:role/r",
+                        nhi_type="iam_role", title="t", severity=Severity.HIGH,
+                        owasp_nhi="NHI5:2025 x", nist_800_53="AC-6",
+                        evidence={}, remediation="fix")]
+    recs = [NHIRecord(id="arn:aws:iam::1:role/r", name="r", nhi_type=NHIType.IAM_ROLE)]
+    rep = build_report(recs, findings, "123", [])
+    assert rep["summary"]["findings_open"] == 1
+    assert rep["summary"]["net_residual_by_severity"]["HIGH"] == 1
+    assert rep["findings"][0]["status"] == "open"

@@ -1,0 +1,14 @@
+# Exception register -- approved risk acceptances and false positives.
+#
+# A finding whose finding_id is listed here is reported as "accepted" rather
+# than "open". Accepted findings do not count toward net residual risk or the
+# CI gate, until the optional 'expires' date passes, after which the finding
+# returns to open. This is time-boxed risk acceptance.
+#
+# Usage:  python -m nhi_governance_engine --demo \
+#             --exceptions examples/exceptions.example.yaml --output report.json
+exceptions:
+  - finding_id: "NHI-STATIC-CRED:ci-deploy"
+    reason: "Legacy CI runner; OIDC migration tracked in JIRA-1234"
+    owner: "platform@corp.com"
+    expires: "2026-12-31"
