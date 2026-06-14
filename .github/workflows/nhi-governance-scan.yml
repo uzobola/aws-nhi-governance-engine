@@ -42,7 +42,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install boto3
+        run: pip install -r requirements-dev.txt
+
+      - name: Run unit tests
+        run: python -m pytest -q
 
       - name: Run NHI governance engine
         run: python -m nhi_governance_engine --region us-east-1 --output nhi-report.json --md-output nhi-report.md

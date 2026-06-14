@@ -131,7 +131,7 @@ The `assumed-role` ARN and the `AROA` user ID are an STS session, not a static-k
 | Deeper trust-policy detectors (cross-account ExternalId, OIDC aud/sub scoping) | Complete |
 | Exception register with net-residual-risk gate | Complete |
 | Markdown reporting and scanner threat model | Complete |
-| Enterprise scale: AWS Organizations multi-account scanning | Planned |
+| [Enterprise scale](Enterprise-scale.md): AWS Organizations multi-account scanning | Planned |
 | IAM Access Analyzer enrichment (external and unused access) | Planned |
 | Managed-policy privilege-escalation patterns (PassRole chains, policy-version abuse) | Planned |
 | Second platform: GitHub Actions OIDC or Entra workload identities | Planned |
