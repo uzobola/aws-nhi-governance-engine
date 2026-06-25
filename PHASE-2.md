@@ -1,6 +1,6 @@
 # Phase 2 — Workload Identity Federation
 
-Remediation of the worst credential model the [NHI governance engine](./nhi_governance_engine.py) detects. This phase migrates a workload off long-lived static AWS access keys onto short-lived, OIDC-federated credentials, then proves the fix using the engine's own credential-model score.
+Remediation of the worst credential model the [NHI governance engine](./nhi_governance_engine/) detects. This phase migrates a workload off long-lived static AWS access keys onto short-lived, OIDC-federated credentials, then proves the fix using the engine's own credential-model score.
 
 ## The problem
 
