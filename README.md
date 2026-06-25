@@ -50,7 +50,7 @@ Three things set it apart from a plain linter:
 - **Evidence over assertion.** The unused-permission detector resolves IAM Access Advisor last-accessed data, so "this role looks over-scoped" becomes "these granted services have never been used," which is the form an auditor or app owner can act on. Managed-policy resolution does the same for privilege: it follows attached AWS-managed and customer-managed policies to their statements, since real permission usually lives there rather than inline.
 - **Risk acceptance, not just detection.** An optional exception register marks specific findings as formally accepted, with a reason, owner, and expiry. Accepted findings are reported separately and do not count toward net residual risk or fail the gate until their expiry passes. That is how a real GRC program distinguishes unresolved risk from signed-off risk.
 
-And it practices what it preaches: `--print-policy` emits the exact least-privilege, read-only IAM policy the engine itself needs to run, so the scanner is never the most over-privileged identity in the account. `THREAT-MODEL.md` models the scanner's own attack surface and bounds a worst-case compromise to read-only, single-account reconnaissance.
+And it practices what it preaches: `--print-policy` emits the exact least-privilege, read-only IAM policy the engine itself needs to run, so the scanner is never the most over-privileged identity in the account. `Threat-Model.md` models the scanner's own attack surface and bounds a worst-case compromise to read-only, single-account reconnaissance.
 
 ## How it works
 
